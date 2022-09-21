@@ -1,0 +1,30 @@
+mode: MPIIGaze
+device: cpu
+model:
+  name: resnet_preact
+face_detector:
+  mode: mediapipe
+  dlib_model_path: ~/.ptgaze/dlib/shape_predictor_68_face_landmarks.dat
+  mediapipe_max_num_faces: 3
+  mediapipe_static_image_mode: false
+gaze_estimator:
+  checkpoint: models/mpiigaze_resnet_preact.pth
+  camera_params: data/calib/sample_params.yaml
+  use_dummy_camera_params: false
+  normalized_camera_params: data/normalized_camera_params/mpiifacegaze.yaml
+  normalized_camera_distance: 0.6
+demo:
+  use_camera: false
+  display_on_screen: true
+  wait_time: 1
+  image_path: null
+  video_path: recorded.avi
+  output_dir: result
+  output_file_extension: avi
+  head_pose_axis_length: 0.05
+  gaze_visualization_length: 0.05
+  show_bbox: true
+  show_head_pose: false
+  show_landmarks: false
+  show_normalized_image: false
+  show_template_model: false
