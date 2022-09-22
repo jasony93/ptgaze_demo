@@ -294,7 +294,7 @@ class Demo:
                 return 2
             else:
                 return 1
-        elif pitch < -30:
+        elif pitch < -20:
             if yaw < -40:
                 return 6
             elif yaw > 40:
@@ -315,7 +315,35 @@ class Demo:
             gaze_area_counter[g] += 1
 
         if gaze_area_counter[4] < 10:
+            logger.info("Warning! Please Look Ahead")
+            sound = AudioSegment.from_mp3('gaze_warning.mp3')
+            play(sound)
+            self.gaze_area_array = []
             return True
+        
+        return False
+
+    def daydreaming_warning(self):
+        pitch_avg = sum(self.pitch_array) / len(self.pitch_array)
+        yaw_avg = sum(self.yaw_array) / len(self.yaw_array)
+        pitch_activity, yaw_activity = 0,0
+
+        for p in self.pitch_array:
+            diff_p = pow(pitch_avg - p, 2)
+            pitch_activity += diff_p
+
+        for y in self.yaw_array:
+            diff_y = pow(yaw_avg - y, 2)
+            yaw_activity += diff_y
+
+        if pitch_activity < 200 and yaw_activity < 200:
+            logger.info("Warning! You Are Daydreaming")
+            sound = AudioSegment.from_mp3('daydreaming_warning.mp3')
+            play(sound)
+            self.pitch_array = []
+            self.yaw_array = []
+
+        print(f'[activity] pitch activity:{round(pitch_activity,0)} yaw activity:{round(yaw_activity,0)}')
 
     def _draw_gaze_vector(self, face: Face) -> None:
         length = self.config.demo.gaze_visualization_length
@@ -335,22 +363,31 @@ class Demo:
             self.pitch_array.append(pitch)
             self.yaw_array.append(yaw)
             logger.info(f'[face] pitch: {pitch:.2f}, yaw: {yaw:.2f}')
-            self.frame_count += 1
-            if self.frame_count % 100 == 0:
-                now = time.time()
-                time_spent = now - self.start_time
-                # print(f'time spent for 100 frames: {time_spent}')
-                self.start_time = now
+
+            #### measure fps ####
+            # self.frame_count += 1
+            # if self.frame_count % 100 == 0:
+            #     now = time.time()
+            #     time_spent = now - self.start_time
+            #     print(f'time spent for 100 frames: {time_spent}')
+            #     self.start_time = now
+
             if self.config.demo.application:
                 gaze_area = self.gaze_area_converter(pitch, yaw)
                 self.gaze_area_array.append(gaze_area)
+                if len(self.pitch_array) > 100:
+                        self.pitch_array = self.pitch_array[1:]
+                        self.yaw_array = self.yaw_array[1:]
                 if len(self.gaze_area_array) > 50:
                     self.gaze_area_array = self.gaze_area_array[1:]
+
+                    if not self.gaze_warning() and len(self.pitch_array) > 99:
+                        self.daydreaming_warning()
                 
-                    if self.gaze_warning():
-                        logger.info("Warning! Please Look Ahead")
-                        sound = AudioSegment.from_wav('PONPON01.wav')
-                        play(sound)
-                        self.gaze_area_array = []
+                    # if self.gaze_warning():
+                    #     logger.info("Warning! Please Look Ahead")
+                    #     sound = AudioSegment.from_wav('PONPON01.wav')
+                    #     play(sound)
+                    #     self.gaze_area_array = []
         else:
             raise ValueError
